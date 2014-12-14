@@ -12,6 +12,17 @@ type Ancestor struct {
 	Parent    *datastore.Key
 }
 
+type Queryable interface{
+	DeleteByKey(key *datastore.Key) error
+	Delete() error
+	Put(entry interface{}) error
+	Get(result interface{}) error
+	GetAll(results interface{}) error
+	AncestorKey() (parent *datastore.Key)
+	Key() *datastore.Key
+	CreateQuery() (q *datastore.Query)
+}
+
 type Query struct {
 	Kind      string
 	Context   Context
@@ -40,9 +51,10 @@ func (query Query) Put(entry interface{}) error {
 	if err != nil {
 		query.Context.Errorf("Put Query Error Kind: " + query.Kind)
 		query.Context.Errorf("Put Query Error KeyString: " + query.KeyString)
-		for _, anc := range query.Ancestors {
-			query.Context.Errorf("Put Query Error-anc Kind: " + anc.Kind)
-			query.Context.Errorf("Put Query Error-anc KeyString: " + anc.KeyString)
+		for _, ancestor := range query.Ancestors {
+			// ancestor := anc.(Ancestor)
+			query.Context.Errorf("Put Query Error-anc Kind: " + ancestor.Kind)
+			query.Context.Errorf("Put Query Error-anc KeyString: " + ancestor.KeyString)
 		}
 		query.Context.Errorf(err.Error())
 	}
@@ -62,6 +74,7 @@ func (query Query) GetAll(results interface{}) error {
 func (query Query) AncestorKey() (parent *datastore.Key) {
 	if len(query.Ancestors) > 0 {
 		for _, ancestor := range query.Ancestors {
+			// ancestor := anc.(Ancestor)
 			ancestor.Context = query.Context
 			ancestor.Parent = parent
 			parent = ancestor.Key()
@@ -83,6 +96,8 @@ func (query Query) Key() *datastore.Key {
 func (query Query) CreateQuery() (q *datastore.Query) {
 
 	q = datastore.NewQuery(query.Kind)
+
+	query.Context.Infof("ROROR multipart form err")
 
 	if len(query.Ancestors) > 0 {
 		ancestor_key := query.AncestorKey()
